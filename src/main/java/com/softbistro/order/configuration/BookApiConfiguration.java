@@ -16,6 +16,42 @@ public class BookApiConfiguration {
 	private String urlForCatalog;
 	private String urlForPrices;
 	private String urlForCreateOrder;
+	private String urlForFirstCheckout;
+	private String urlForZeroCheckout;
+	private String urlForFirstEvaluateCheckout;
+	private String urlForAddItem;
+
+	public String getUrlForAddItem() {
+		return urlForAddItem;
+	}
+
+	public void setUrlForAddItem(String urlForAddItem) {
+		this.urlForAddItem = urlForAddItem;
+	}
+
+	public String getUrlForFirstEvaluateCheckout() {
+		return urlForFirstEvaluateCheckout;
+	}
+
+	public void setUrlForFirstEvaluateCheckout(String urlForFirstEvaluateCheckout) {
+		this.urlForFirstEvaluateCheckout = urlForFirstEvaluateCheckout;
+	}
+
+	public String getUrlForZeroCheckout() {
+		return urlForZeroCheckout;
+	}
+
+	public void setUrlForZeroCheckout(String urlForZeroCheckout) {
+		this.urlForZeroCheckout = urlForZeroCheckout;
+	}
+
+	public String getUrlForFirstCheckout() {
+		return urlForFirstCheckout;
+	}
+
+	public void setUrlForFirstCheckout(String urlForFirstCheckout) {
+		this.urlForFirstCheckout = urlForFirstCheckout;
+	}
 
 	public String getUrlForCatalog() {
 		return urlForCatalog;

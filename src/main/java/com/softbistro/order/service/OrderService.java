@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.core.MediaType;
+
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,73 +25,168 @@ import com.softbistro.order.component.PriceItem;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.client.filter.GZIPContentEncodingFilter;
 
 @Service
 public class OrderService {
+
 	@Value("${orders.url-for-catalog}")
 	private String URL_GET_CATALOG;
 	@Value("${orders.url-for-prices}")
-	private String URL_GET_PRICES = "";
+	private String URL_GET_PRICES;
 	@Value("${orders.url-for-create-order}")
-	private String URL_CREATE_ORDER = "";
+	private String URL_CREATE_ORDER;
+	@Value("${orders.url-for-first-checkout}")
+	private String URL_FIRST_CHECKOUT;
+	@Value("${orders.url-for-zero-checkout}")
+	private String URL_ZERO_CHECKOUT;
+	@Value("${orders.url-for-first-evaluate-checkout}")
+	private String URL_FIRST_EVALUATE_CHECKOUT;
+	@Value("${orders.url-for-add-item}")
+	private String URL_ADD_ITEM;
+
+	private static final Logger LOGGER = Logger.getLogger(OrderService.class);
 	private String jsonText;
-	private final Integer userId = 317673305;
-	private static CatalogItem catalogItem;
+	private final Integer userId = 66132623;
 	private static Integer orderId;
 	private JSONObject jsonItem;
 	private JSONArray array;
+
+	private String checkoutFirstList = "[\n"
+			+ "  { \"namespace\": \"place_order\", \"key\": \"place_order_experiment\", \"value\": \"true\" },\n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"fname\", \"value\": \"Vova\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"lname\", \"value\": \"K\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"line1\", \"value\": \"666 Dundee Road\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"line2\", \"value\": \"\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"city\", \"value\": \"Northbrook\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"state\", \"value\": \"IL\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"country\", \"value\": \"US\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"zip\", \"value\": \"60062\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"phone\", \"value\": \"5335555555\" }, \n"
+			+ "    { \"namespace\": \"shipping_address\", \"key\": \"address_id\", \"value\": \"58229368\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"fname\", \"value\": \"VISA\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"lname\", \"value\": \"\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"line1\", \"value\": \"Po Box 629\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"line2\", \"value\": \"\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"city\", \"value\": \"Hartford\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"state\", \"value\": \"CT\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"country\", \"value\": \"US\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"zip\", \"value\": \"06103\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"phone\", \"value\": \"5533555555\" }, \n"
+			+ "    { \"namespace\": \"billing_address\", \"key\": \"address_id\", \"value\": \"119522422\" },\n"
+			+ "  { \"namespace\": \"method_of_payment1\",  \"key\": \"type\", \"value\": \"CREDITCARD\" },\n"
+			+ "  { \"namespace\": \"method_of_payment1\", \"key\": \"id\", \"value\": 110556349 }, \n"
+			+ "  { \"namespace\": \"method_of_payment1\", \"key\": \"amount\", \"value\": null },\n"
+			+ "  {  \"namespace\": \"confirm_checkout\", \"key\": \"confirmed\", \"value\": \"1\"  }\n" + "]";
+	private String checkoutZeroList = "[  \n" + "	\"checkout_initial\", \n" + "	\"shipping_address\", \n"
+			+ "	\"calculate_item_prices_v3\",                    \n" + "	\"make_prices_consistent\",\n"
+			+ "	\"tbs_verification\",                    \n" + "	\"billing_address\", \n"
+			+ "	\"summate_total\", \n" + "	\"free_method_of_payment\",                    \n"
+			+ "	\"method_of_payment\", \n" + "	\"subscription_verification\",                     \n"
+			+ "	\"report_errors\", \n" + "	\"shipping_choices\",\n" + "	\"calculate_coupons\",                   \n"
+			+ "	\"calculate_taxes\", \n" + "	\"can_fulfill\", \n" + "	\"confirm_checkout\", \n"
+			+ "	\"payment_authorize_v3\",\n" + "	\"assign_order_key\",                     \n"
+			+ "	\"expand_quantities\"\n" + "]";
+	private String setShippingOptions = "[\n"
+			+ "  { \"namespace\":\"shipping_choices1\", \"key\":\"option_chosen\", \"value\":\"";
+
+	public void zeroCheckout(BookForOrder book) throws JsonProcessingException {
+		LOGGER.info(postToApiString(checkoutZeroList, URL_ZERO_CHECKOUT + book.getOrderId() + "/CHECKOUTV3"));
+	}
+
+	public void firstCheckout(BookForOrder book) throws JsonProcessingException {
+		LOGGER.info(postToApiString(checkoutFirstList, URL_FIRST_CHECKOUT + book.getOrderId() + "/CHECKOUTV3"));
+	}
+
+	public String firstEvaluateCheckout(BookForOrder book) throws JsonProcessingException {
+		jsonText = postToApi(null, URL_FIRST_EVALUATE_CHECKOUT + book.getOrderId() + "/CHECKOUTV3");
+		jsonItem = new JSONObject(new JSONObject(jsonText).getJSONObject("data").toString());
+		return jsonItem.getString("shipping_choices1.option1-hash");
+	}
+
+	public void lastEvaluateCheckout(BookForOrder book) throws JsonProcessingException {
+		LOGGER.info(postToApi(null, URL_FIRST_EVALUATE_CHECKOUT + book.getOrderId() + "/CHECKOUTV3"));
+	}
+
+	public void setShippingOptions(BookForOrder book) throws JsonProcessingException {
+		LOGGER.info(postToApiString(setShippingOptions + book.getShippingChoiceHash() + "\"}\n" + "]",
+				URL_FIRST_CHECKOUT + book.getOrderId() + "/CHECKOUTV3"));
+	}
+
+	public void addItem(BookForOrder book) throws JsonProcessingException {
+		LOGGER.info(putToApiString(
+				"[  {    \"catalogItemId\": \"" + book.getCatalogItemId() + "\",    \"pricingId\": \""
+						+ book.getPricingId() + "\",    \"quantity\": " + book.getQuantity() + "  }]",
+				URL_ADD_ITEM + book.getOrderId()));
+	}
+
 	public Integer createOrder(BookForOrder book) throws JsonProcessingException {
 		List<OrderItem> items = new ArrayList<>();
-		items.add(new OrderItem(1, "COPS", book.getCatalogItemId(), book.getPricingId()));
+		items.add(new OrderItem(1, "COPS", book.getPricingId(), book.getCatalogItemId()));
 		Order order = new Order(items, userId);
-		orderId = new JSONObject(postToApi(order)).getInt("id");
+		jsonText = postToApi(order, URL_CREATE_ORDER);
+		orderId = new JSONObject(jsonText).getInt("id");
 		return orderId;
 	}
 
-	public CatalogItem getCatalogItem() {
+	public CatalogItem getCatalogItem(String catalogItemId) {
 		JSONObject jsonPrice;
-		jsonText = readAll(URL_GET_PRICES);
-		jsonItem = new JSONObject(new JSONArray(jsonText).get(0).toString());
+		jsonText = readAll(URL_GET_PRICES + catalogItemId);
+		jsonItem = new JSONObject(jsonText);
 		array = new JSONArray(jsonItem.get("prices").toString());
 		List<PriceItem> prices = new ArrayList<>();
 		for (Object priceObject : array) {
 			jsonPrice = new JSONObject(priceObject.toString());
 			prices.add(new PriceItem(jsonPrice.getDouble("price"), jsonPrice.getString("logId")));
 		}
-		catalogItem = new CatalogItem(jsonItem.getString("catalogItemId"), jsonItem.getString("name"), prices);
-		return catalogItem;
+		return new CatalogItem(jsonItem.getString("catalogItemId"), jsonItem.getString("name"), prices);
 	}
 
-	public List<Book> getCatalog() {
+	public List<Book> getCatalog(String searchQuery) {
 		List<Book> books = new ArrayList<>();
 		List<String> authorList = new ArrayList<>();
 		JSONArray authorJsonArray;
-		jsonText = readAll(URL_GET_CATALOG);
+		jsonText = readAll(URL_GET_CATALOG + searchQuery);
 		array = new JSONArray(new JSONObject(jsonText).get("result").toString());
-		JSONArray booksJson = new JSONArray(new JSONObject(
-				new JSONObject(new JSONObject(array.get(0).toString()).get("tbs-book").toString())
+		JSONArray booksJson = new JSONArray(
+				new JSONObject(new JSONObject(new JSONObject(array.get(0).toString()).get("tbs-book").toString())
 						.get("responseContent").toString()).get("docs").toString());
 		for (Object object : booksJson) {
 			jsonItem = new JSONObject(object.toString());
 			authorJsonArray = new JSONArray(jsonItem.get("authors").toString());
 			authorJsonArray.forEach(author -> authorList.add(author.toString()));
 			books.add(new Book(jsonItem.getString("id"), jsonItem.getString("title"), jsonItem.getString("isbn"),
-					jsonItem.getString("ean"), jsonItem.getString("imageUri"), authorList));
+					jsonItem.getString("ean"), jsonItem.getString("imgWidth80"), authorList));
 		}
 		return books;
 	}
 
-	public String postToApi(Order order) throws JsonProcessingException {
+	public String postToApi(Object object, String url) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
-		jsonText = mapper.writeValueAsString(order);
+		jsonText = mapper.writeValueAsString(object);
 		Client client = Client.create();
-		WebResource webResource = client.resource(URL_CREATE_ORDER);
-		ClientResponse response = webResource.type("application/json").post(ClientResponse.class, jsonText);
-		String output = response.getEntity(String.class);
-		return output;
+		WebResource webResource = client.resource(url);
+		ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
+				.post(ClientResponse.class, jsonText);
+
+		return response.getEntity(String.class);
+	}
+
+	public String putToApiString(String body, String url) throws JsonProcessingException {
+		Client client = Client.create();
+		WebResource webResource = client.resource(url);
+		ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
+				.put(ClientResponse.class, body);
+
+		return response.getEntity(String.class);
+	}
+	
+	public String postToApiString(String body, String url) throws JsonProcessingException {
+		Client client = Client.create();
+		WebResource webResource = client.resource(url);
+		ClientResponse response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
+				.post(ClientResponse.class, body);
+
+		return response.getEntity(String.class);
 	}
 
 	/**
@@ -99,18 +197,15 @@ public class OrderService {
 	 * @return data from stream
 	 */
 	private String readAll(String url) {
-		ClientConfig config = new DefaultClientConfig();
-		Client client = Client.create(config);
-		client.addFilter(new GZIPContentEncodingFilter(false));
+		Client client = Client.create();
 		try {
 			WebResource wr = client.resource(url);
-			ClientResponse response = null;
-			response = wr.get(ClientResponse.class);
-			jsonText = response.getEntity(String.class);
+			ClientResponse response = wr.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 
+			return response.getEntity(String.class);
 		} catch (Exception e) {
+			throw new RuntimeException(e.getMessage(), e);
 		}
-		return jsonText;
 	}
 
 	public GenericTemplate createTemplate(List<Book> books) {
