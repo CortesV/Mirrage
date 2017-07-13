@@ -11,14 +11,28 @@ public class Book {
 	private String price;
 	private List<String> authors;
 
-	public Book(String id, String title, String isbn, String ean, String imageUrl, List<String> authors) {
-		super();
+
+	public Book(String id, String title, String isbn,String ean, String imageUrl, List<String> authors) {
+
 		this.id = id;
 		this.title = title;
 		this.isbn = isbn;
-		this.ean = ean;
 		this.imageUrl = imageUrl;
 		this.authors = authors;
+		this.ean = ean;
+	}
+
+	
+	public Book() {
+	}
+
+
+	public String getEan() {
+		return ean;
+	}
+
+	public void setEan(String ean) {
+		this.ean = ean;
 	}
 
 	public String getImageUrl() {

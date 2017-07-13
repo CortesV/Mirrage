@@ -7,6 +7,12 @@ public class CatalogItem {
 	private String name;
 	private List<PriceItem> prices;
 
+	public CatalogItem(String catalogItemId, String name, List<PriceItem> prices) {
+		this.catalogItemId = catalogItemId;
+		this.name = name;
+		this.prices = prices;
+	}
+
 	public String getCatalogItemId() {
 		return catalogItemId;
 	}
